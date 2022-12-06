@@ -1,8 +1,11 @@
 from bs4 import BeautifulSoup
 import requests
 import json
+import sqlite3
+import os
 
 API_KEY = "44e2735d"
+
 #returns list of 100 movie titles from 2022
 def get_titles():
 
@@ -63,11 +66,39 @@ def get_ratings(dic):
 
     return ratings_dic
 
+def open_database(db_name):
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(path+'/'+db_name)
+    cur = conn.cursor()
+    return cur, conn
+
+def create_ratings_table(cur, conn):
+    cur.execute("CREATE TABLE IF NOT EXISTS Ratings (movie_id INTEGER PRIMARY KEY, title TEXT, \
+        rating INTEGER)")
+    conn.commit()
+
+
+def add_data(data, cur, conn):
+
+    count = 1
+    for movie in data:
+        title = movie
+        rating = data[movie]
+        id = count
+        count += 1
+        cur.execute("INSERT OR IGNORE INTO Ratings (movie_id, title, rating) VALUES (?,?,?)", (id, title, rating))
+    conn.commit()
+
 
 
 movies = get_titles()
 urls = get_request_url(movies)
-print(get_ratings(urls))
+cur, conn = open_database('final_db.db')
+create_ratings_table(cur, conn)
+ratings_dic = get_ratings(urls)
+add_data(ratings_dic, cur, conn)
 
 
 
+#main table = movie id, title, rating, budget
+#ratings table = 
