@@ -51,20 +51,16 @@ def get_request_url(list):
 
 #returns dic with movie title and rating
 def get_ratings(dic):
-    ratings_dic = {}
+    ratings_list = []
 
 
     for movie in dic:
         r = requests.get(dic[movie])
         result = json.loads(r.text)
         rating = result["imdbRating"]
-        ratings_dic[movie] = rating
+        ratings_list.append((movie, rating))
 
-    for movie in ratings_dic:
-        if ratings_dic[movie] == 'N/A':
-            print(movie)
-
-    return ratings_dic
+    return ratings_list
 
 
 #open database
@@ -82,14 +78,21 @@ def create_id_table(cur, conn):
 #add data to ratings table
 def add_id_data(data, cur, conn):
 
-    count = 1
-    for movie in data:
-        title = str(movie)
+    cur.execute("SELECT movie_id FROM Movie_ids WHERE movie_id = (SELECT MAX(movie_id) FROM Movie_ids)")
+    count = cur.fetchone()
+    if count != None:
+        count = count[0] + 1
+
+    else:
+        count = 1
+
+    for movie in data[count-1:count+24]:
+        title = movie[0]
         id = count
         count += 1
         cur.execute("INSERT OR IGNORE INTO movie_ids (movie_id, title) VALUES (?,?)", (id, title))
     conn.commit()
-
+            
 
 #create ratings table
 def create_ratings_table(cur, conn):
@@ -99,28 +102,36 @@ def create_ratings_table(cur, conn):
 #add data to ratings table
 def add_ratings_data(data, cur, conn):
 
-   for movie in data:
-        title = movie
-        rating = data[movie]
+    cur.execute("SELECT movie_id FROM Ratings WHERE movie_id = (SELECT MAX(movie_id) FROM Ratings)")
+    count = cur.fetchone()
+    if count != None:
+        count = count[0] + 1
+
+    else:
+        count = 1
+
+    for movie in data[count-1:count+24]:
+        title = movie[0]
+        rating = movie[1]
+        count += 1
+
         cur.execute(f'''SELECT Movie_ids.movie_id FROM Movie_ids WHERE Movie_ids.title = "{title}" ''')
         res = cur.fetchone()
         id_key = res[0]
         cur.execute("INSERT OR IGNORE INTO Ratings (movie_id, rating) VALUES (?,?)", (id_key, rating))
-        conn.commit()
+    conn.commit()
+
 
 #running function to get titles and ratings
 movies = get_titles()
 urls = get_request_url(movies)
-ratings_dic = get_ratings(urls)
-print(ratings_dic)
+ratings_list = get_ratings(urls)
+
 
 #opening database and entering info
 cur, conn = open_database('final_db.db')
 create_ratings_table(cur, conn)
 create_id_table(cur, conn)
-add_id_data(ratings_dic, cur, conn)
-add_ratings_data(ratings_dic, cur, conn)
+add_id_data(ratings_list, cur, conn)
+add_ratings_data(ratings_list, cur, conn)
 
-#titles = movie_id, title 
-#ratings = movie_id, ratings
-#budget = movie_id, budget
