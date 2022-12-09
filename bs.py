@@ -46,13 +46,35 @@ def get_budget(list):
         title = details['title']
         budget = details['budget']
         budget_dict[title] = budget
-    print(budget_dict)
-    print(len(budget_dict))
+
+    return budget_dict
+
+def open_database(name):
+    path = os.path.dirname(os.path.abspath(__file__))
+    conn = sqlite3.connect(path+'/'+name)
+    cur = conn.cursor()
+    return cur, conn
+
+def create_budget_table(cur, conn):
+    cur.execute("CREATE TABLE IF NOT EXISTS Budgets (movie_id INTEGER PRIMARY KEY, budget INTEGER)")
+    conn.commit()
+
+def add_budget_data(data, cur, conn):
+
+    count = 1
+    for x in data:
+        title = str(x)
+        budget = data[x]
+        id = count
+        count += 1
+        cur.execute("INSERT OR IGNORE INTO Budgets (movie_id, budget) VALUES (?,?)", (id, budget))
+    conn.commit()
 
 
 movies = get_titles()
 budget = get_budget(movies)
-# cur, conn = open_database('final_db.db')
-# create_budget_table(cur, conn)
-# add_data(budget_dict, cur, conn)
+print(budget)
+cur, conn = open_database('final_db.db')
+create_budget_table(cur, conn)
+add_budget_data(budget, cur, conn)
 
