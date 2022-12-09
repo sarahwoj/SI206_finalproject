@@ -37,7 +37,7 @@ def get_budget(list):
         id = first['id']
         id_list.append(id)
 
-    budget_dict = {}
+    budget_list = []
     for y in id_list:
         base_url_2 = f"https://api.themoviedb.org/3/movie/{y}"
         parameter = {"api_key": API_KEY}
@@ -45,9 +45,9 @@ def get_budget(list):
         details = json.loads(r2.text)
         title = details['title']
         budget = details['budget']
-        budget_dict[title] = budget
+        budget_list.append((title, budget))
 
-    return budget_dict
+    return budget_list
 
 def open_database(name):
     path = os.path.dirname(os.path.abspath(__file__))
@@ -61,15 +61,19 @@ def create_budget_table(cur, conn):
 
 def add_budget_data(data, cur, conn):
 
-    count = 1
-    for x in data:
-        title = str(x)
-        budget = data[x]
+    cur.execute("SELECT movie_id FROM Budgets WHERE movie_id = (SELECT MAX(movie_id) FROM Budgets)")
+    count = cur.fetchone()
+    if count != None:
+        count = count[0] + 1
+    else:
+        count = 1
+
+    for x in data[count-1:count+24]:
+        budget = x[1]
         id = count
         count += 1
         cur.execute("INSERT OR IGNORE INTO Budgets (movie_id, budget) VALUES (?,?)", (id, budget))
     conn.commit()
-
 
 movies = get_titles()
 budget = get_budget(movies)
@@ -77,4 +81,5 @@ print(budget)
 cur, conn = open_database('final_db.db')
 create_budget_table(cur, conn)
 add_budget_data(budget, cur, conn)
+# cur.execute("DROP TABLE IF EXISTS Budgets")
 
