@@ -49,7 +49,7 @@ def get_request_url(list):
             url_dic[movie] = base_url
     return url_dic
 
-
+#returns dic with movie title and rating
 def get_ratings(dic):
     ratings_dic = {}
 
@@ -66,39 +66,61 @@ def get_ratings(dic):
 
     return ratings_dic
 
+
+#open database
 def open_database(db_name):
     path = os.path.dirname(os.path.abspath(__file__))
     conn = sqlite3.connect(path+'/'+db_name)
     cur = conn.cursor()
     return cur, conn
 
-def create_ratings_table(cur, conn):
-    cur.execute("CREATE TABLE IF NOT EXISTS Ratings (movie_id INTEGER PRIMARY KEY, title TEXT, \
-        rating INTEGER)")
+#create ratings table
+def create_id_table(cur, conn):
+    cur.execute("CREATE TABLE IF NOT EXISTS Movie_ids (movie_id INTEGER PRIMARY KEY, title TEXT)")
     conn.commit()
 
-
-def add_data(data, cur, conn):
+#add data to ratings table
+def add_id_data(data, cur, conn):
 
     count = 1
     for movie in data:
-        title = movie
-        rating = data[movie]
+        title = str(movie)
         id = count
         count += 1
-        cur.execute("INSERT OR IGNORE INTO Ratings (movie_id, title, rating) VALUES (?,?,?)", (id, title, rating))
+        cur.execute("INSERT OR IGNORE INTO movie_ids (movie_id, title) VALUES (?,?)", (id, title))
     conn.commit()
 
 
+#create ratings table
+def create_ratings_table(cur, conn):
+    cur.execute("CREATE TABLE IF NOT EXISTS Ratings (movie_id INTEGER PRIMARY KEY, rating INTEGER)")
+    conn.commit()
 
+#add data to ratings table
+def add_ratings_data(data, cur, conn):
+
+   for movie in data:
+        title = movie
+        rating = data[movie]
+        cur.execute(f'''SELECT Movie_ids.movie_id FROM Movie_ids WHERE Movie_ids.title = "{title}" ''')
+        res = cur.fetchone()
+        id_key = res[0]
+        cur.execute("INSERT OR IGNORE INTO Ratings (movie_id, rating) VALUES (?,?)", (id_key, rating))
+        conn.commit()
+
+#running function to get titles and ratings
 movies = get_titles()
 urls = get_request_url(movies)
+ratings_dic = get_ratings(urls)
+print(ratings_dic)
+
+#opening database and entering info
 cur, conn = open_database('final_db.db')
 create_ratings_table(cur, conn)
-ratings_dic = get_ratings(urls)
-add_data(ratings_dic, cur, conn)
+create_id_table(cur, conn)
+add_id_data(ratings_dic, cur, conn)
+add_ratings_data(ratings_dic, cur, conn)
 
-
-
-#main table = movie id, title, rating, budget
-#ratings table = 
+#titles = movie_id, title 
+#ratings = movie_id, ratings
+#budget = movie_id, budget
