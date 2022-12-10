@@ -75,9 +75,10 @@ def add_budget_data(data, cur, conn):
         cur.execute("INSERT OR IGNORE INTO Budgets (movie_id, budget) VALUES (?,?)", (id, budget))
     conn.commit()
 
+
 movies = get_titles()
 budget = get_budget(movies)
-print(budget)
+# print(budget)
 cur, conn = open_database('final_db.db')
 create_budget_table(cur, conn)
 add_budget_data(budget, cur, conn)
