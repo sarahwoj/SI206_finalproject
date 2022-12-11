@@ -49,7 +49,7 @@ def get_request_url(list):
             url_dic[movie] = base_url
     return url_dic
 
-#returns dic with movie title and rating
+#returns list with movie title and rating in tuple
 def get_ratings(dic):
     ratings_list = []
 
