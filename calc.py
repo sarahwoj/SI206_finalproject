@@ -111,4 +111,4 @@ print(create_csv("Average Movie Rating for Different Budget Groups.csv"))
     # over 100 mill
 # get ratings for movies by matching movie_id
 # calculate avg rating per group
-# write out calculation to txt file
+# write out calculation to file
